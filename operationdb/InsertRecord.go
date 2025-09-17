@@ -14,26 +14,22 @@ import (
 func (u *UserCRUD) InsertRecord(tableName string, query string) {
 	fullPath := filepath.Join("./tables", tableName+".json")
 
-	// ✅ Step 1: Check if table exists
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		log.Fatalf("Table %s does not exist!", tableName)
 		return
 	}
 
-	// ✅ Step 2: Open only if it exists (no O_CREATE)
 	file, err := os.OpenFile(fullPath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("Failed to open table %s: %v", tableName, err)
 	}
 	defer file.Close()
 
-	// ✅ Step 3: Read file contents
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
 		log.Fatalf("Failed to read table %s: %v", tableName, err)
 	}
 
-	// Extract keys from query
 	re := regexp.MustCompile(`\b([A-Za-z_]+)\s*:`)
 	matches := re.FindAllStringSubmatch(query, -1)
 

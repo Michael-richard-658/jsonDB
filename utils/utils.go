@@ -9,7 +9,6 @@ func CreateFilePath(tableName string) string {
 	dirPath := "./tables"
 	fileExtension := ".json"
 
-	// filePath will change based on the tableName passed into the function
 	filePath := filepath.Join(dirPath, tableName+fileExtension)
 	return filePath
 }
