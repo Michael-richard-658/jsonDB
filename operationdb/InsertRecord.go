@@ -1,14 +1,14 @@
 package operationdb
 
 import (
-	"fmt"
+	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
-
-	"github.com/Michael-richard-658/Simple-database/utils"
+	"strconv"
+	"strings"
 )
 
 func (u *UserCRUD) InsertRecord(tableName string, query string) {
@@ -16,49 +16,68 @@ func (u *UserCRUD) InsertRecord(tableName string, query string) {
 
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		log.Fatalf("Table %s does not exist!", tableName)
-		return
 	}
 
-	file, err := os.OpenFile(fullPath, os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatalf("Failed to open table %s: %v", tableName, err)
-	}
-	defer file.Close()
-
-	data, err := os.ReadFile(fullPath)
+	fileData, err := os.ReadFile(fullPath)
 	if err != nil {
 		log.Fatalf("Failed to read table %s: %v", tableName, err)
 	}
 
 	re := regexp.MustCompile(`\b([A-Za-z_]+)\s*:`)
 	matches := re.FindAllStringSubmatch(query, -1)
-
 	sortedKeys := []string{}
 	for _, match := range matches {
 		sortedKeys = append(sortedKeys, match[1])
 	}
 	sort.Strings(sortedKeys)
-	fmt.Println("Sorted keys from query:", sortedKeys)
 
-	content := string(data)
-	stringToJson, err := utils.StringToJSON(content)
-	if err != nil {
-		log.Fatal("String to JSON error! ")
+	var records []map[string]interface{}
+	if err := json.Unmarshal(fileData, &records); err != nil {
+		log.Fatalf("Invalid JSON in table %s: %v", tableName, err)
+	}
+	if len(records) == 0 {
+		log.Fatalf("Table %s has no schema definition", tableName)
 	}
 
+	schema := records[0]
+	keyCount := 0
 	for _, key := range sortedKeys {
-		if _, ok := stringToJson[key]; ok {
-			fmt.Println("Table matched for key:", key)
+		if _, ok := schema[key]; ok {
+			keyCount++
 		} else {
-			log.Fatalf("Wrong table name or unknown field: %s", key)
+			log.Fatalf("Unknown field: %s", key)
 		}
 	}
 
-	/*
-		_, err = file.Write([]byte("\n" + query + "\n"))
-		if err != nil {
-			fmt.Println("Something went wrong while writing to the file, please try again")
-			return
+	if keyCount == len(schema) {
+		recordMap := make(map[string]interface{})
+		parts := strings.Split(query, ",")
+		for _, part := range parts {
+			pair := strings.SplitN(strings.TrimSpace(part), ":", 2)
+			if len(pair) != 2 {
+				continue
+			}
+			key := strings.TrimSpace(pair[0])
+			val := strings.TrimSpace(pair[1])
+			if i, err := strconv.Atoi(val); err == nil {
+				recordMap[key] = i
+			} else if f, err := strconv.ParseFloat(val, 64); err == nil {
+				recordMap[key] = f
+			} else {
+				recordMap[key] = val
+			}
 		}
-	*/
+
+		records = append(records, recordMap)
+		jsonData, err := json.MarshalIndent(records, "", "    ")
+		if err != nil {
+			log.Fatalf("Failed to marshal records: %v", err)
+		}
+
+		if err := os.WriteFile(fullPath, jsonData, 0644); err != nil {
+			log.Fatalf("Failed to write table %s: %v", tableName, err)
+		}
+	} else if keyCount > len(schema) {
+		log.Fatal("More fields in query than in table definition.")
+	}
 }

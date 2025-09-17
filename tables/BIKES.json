@@ -1,6 +1,20 @@
-{
-    "CC": "",
-    "HP": "",
-    "NAME": "",
-    "TORQUE": ""
-}
+[
+    {
+        "CC": "",
+        "HP": "",
+        "NAME": "",
+        "TORQUE": ""
+    },
+    {
+        "CC": 499,
+        "HP": 27,
+        "NAME": "Royal Enfield Classic 500",
+        "TORQUE": 41.3
+    },
+    {
+        "CC": 199.5,
+        "HP": 20.5,
+        "NAME": "Xpulse 200",
+        "TORQUE": 18.1
+    }
+]

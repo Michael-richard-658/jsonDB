@@ -5,7 +5,7 @@ type DataBaseCRUD interface {
 	InsertRecord(tableName string, query string)
 	UpdateData()
 	DeleteData()
-	QueryRecord()
+	QueryRecord(query string)
 }
 
 type UserCRUD struct{}

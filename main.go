@@ -7,9 +7,10 @@ import (
 func main() {
 	DBCRUD := operationdb.UserCRUD{}
 	//DBCRUD.CreateTable("BIKES", " NAME CC HP TORQUE ")
-	DBCRUD.InsertRecord("DOGS", `NAME: Royal Enfield Classic 500,
-	CC: 499,
-	HP:27.,
-	TORQUE: 41.3`,
-	)
+	/*DBCRUD.InsertRecord("BIKES", `NAME: Xpulse 200,
+	CC: 199.5,
+	HP: 20.5,
+	TORQUE: 18.1`,
+	)*/
+	DBCRUD.QueryRecord("SELECT * FROM BIKES ")
 }
