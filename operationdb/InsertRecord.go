@@ -31,7 +31,7 @@ func (u *UserCRUD) InsertRecord(tableName string, query string) {
 	}
 	sort.Strings(sortedKeys)
 
-	var records []map[string]interface{}
+	var records []map[string]any
 	if err := json.Unmarshal(fileData, &records); err != nil {
 		log.Fatalf("Invalid JSON in table %s: %v", tableName, err)
 	}

@@ -1,0 +1,38 @@
+[
+    {
+        "AGE": "",
+        "BREED": "",
+        "COLOR": "",
+        "NAME": ""
+    },
+    {
+        "AGE": 3,
+        "BREED": "LABRADOR",
+        "COLOR": "BROWN",
+        "NAME": "COOKIE"
+    },
+    {
+        "AGE": 3,
+        "BREED": "GOLDEN-RETRIVER",
+        "COLOR": "BROWN",
+        "NAME": "MEAN"
+    },
+    {
+        "AGE": 3,
+        "BREED": "GOLDEN-RETRIVER",
+        "COLOR": "BROWN",
+        "NAME": "MEAN"
+    },
+    {
+        "AGE": 5,
+        "BREED": "ST-BERNARD",
+        "COLOR": "WHITE-BROWN",
+        "NAME": "COOKESH"
+    },
+    {
+        "AGE": 5,
+        "BREED": "ST-BERNARD",
+        "COLOR": "WHITE-BROWN",
+        "NAME": "COOKESH"
+    }
+]

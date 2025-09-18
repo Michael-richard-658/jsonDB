@@ -6,11 +6,9 @@ import (
 
 func main() {
 	DBCRUD := operationdb.UserCRUD{}
-	//DBCRUD.CreateTable("BIKES", " NAME CC HP TORQUE ")
-	/*DBCRUD.InsertRecord("BIKES", `NAME: Xpulse 200,
-	CC: 199.5,
-	HP: 20.5,
-	TORQUE: 18.1`,
+	//DBCRUD.CreateTable("DOGS", " NAME BREED  AGE COLOR ")
+	/*DBCRUD.InsertRecord("DOGS", `NAME: COOKESH,
+	 BREED: ST-BERNARD, AGE: 5, COLOR: WHITE-BROWN`,
 	)*/
 	DBCRUD.QueryRecord("SELECT * FROM BIKES ")
 }

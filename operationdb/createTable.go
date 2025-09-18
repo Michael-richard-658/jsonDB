@@ -42,7 +42,7 @@ func (u *UserCRUD) CreateTable(tableName string, attributes string) {
 		log.Fatalf("failed to create file: %s", err)
 	}
 	defer createFile.Close()
-	_, err = createFile.WriteString("[" + string(jsonData) + "," + "]")
+	_, err = createFile.WriteString("[" + string(jsonData) + "]")
 	if err != nil {
 		fmt.Println("Something went wrong while writing to the file, please try again")
 		return
