@@ -55,11 +55,11 @@ func (u *UserCRUD) QueryRecord(query string) {
 		log.Fatal("Invalid query: missing FROM")
 	}
 
-	tableName, ok := queryParts[fromIndex].(string)
+	tableNameWithSemicolon, ok := queryParts[fromIndex].(string)
 	if !ok {
 		log.Fatal("Invalid table name")
 	}
-
+	tableName := strings.ToUpper(strings.TrimSuffix(tableNameWithSemicolon, ";"))
 	fullPath := filepath.Join("./tables", fmt.Sprintf("%s.json", tableName))
 
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
@@ -82,5 +82,9 @@ func (u *UserCRUD) QueryRecord(query string) {
 	}
 	utilsDB := utils.Utils{}
 	//utilsDB.MapToJSON(records[0], "obj")
-	utilsDB.MapToSQLTable(records, "*")
+	if len(records) > 1 {
+		utilsDB.MapToSQLTable(records, "*")
+	} else {
+		println("Empty set!")
+	}
 }

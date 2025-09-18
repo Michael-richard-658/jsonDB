@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"os/exec"
 	"sort"
 	"strings"
 )
@@ -11,6 +13,8 @@ import (
 type UtilsInterface interface {
 	MapToSQLTable(data interface{}, mode string)
 	MapToJSON(m map[string]any, mode string) string
+	QueryParts(query string) []string
+	Clrscr()
 }
 
 type Utils struct{}
@@ -115,4 +119,46 @@ func (u Utils) MapToJSON(m map[string]any, mode string) string {
 
 	log.Fatalf("invalid mode: %s (use 'print' or 'obj')", mode)
 	return ""
+}
+
+func (u *Utils) QueryParts(query string) []string {
+	queryLength := len(query)
+	semiColonIndex := queryLength - 2
+
+	querySemicolonASCIIValue := query[semiColonIndex]
+	if querySemicolonASCIIValue != ';' {
+		fmt.Println("Expected ';' Found ' ' ")
+		return []string{"; error"}
+	}
+
+	parts := strings.Fields(
+		strings.TrimSpace(
+			strings.TrimSuffix(query, ";"),
+		),
+	)
+
+	// "from" should be second to last
+	fromIdx := len(parts) - 2
+
+	fields := parts[1:fromIdx]
+	table := parts[len(parts)-1]
+
+	if len(fields) == 1 && fields[0] == "*" {
+		return parts
+	}
+	if parts[0] == "select" {
+		return []string{fmt.Sprintf("select [%s] from %s", strings.ToLower(strings.Join(fields, " ")), table)}
+	}
+	if parts[0] == "create" {
+		return parts
+	}
+	return []string{"OUT OF BOUNDS"}
+}
+
+func (u *Utils) Clrscr() {
+
+	cmd := exec.Command("clear")
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+
 }

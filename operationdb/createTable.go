@@ -9,6 +9,20 @@ import (
 	"strings"
 )
 
+func MakeCreateTableQueryArray(query string) (string, []string) {
+	queryParts := strings.Fields(query)
+	if strings.ToLower(queryParts[1]) != "table" {
+		log.Fatal(queryParts[1] + " is not a valid command, did you mean TABLE?")
+	}
+	if len(queryParts) < 4 {
+		log.Fatal("Invalid CREATE TABLE query")
+	}
+
+	tableName := queryParts[2]
+	attributes := queryParts[3:]
+	return tableName, attributes
+}
+
 func (u *UserCRUD) CreateTable(tableName string, attributes string) {
 	dirPath := "./tables"
 
@@ -35,7 +49,7 @@ func (u *UserCRUD) CreateTable(tableName string, attributes string) {
 		log.Fatalf("failed to marshal map: %v", err)
 	}
 
-	filePath := filepath.Join(dirPath, tableName+".json")
+	filePath := filepath.Join(dirPath, strings.ToUpper(tableName)+".json")
 
 	createFile, err := os.Create(filePath)
 	if err != nil {
@@ -48,5 +62,5 @@ func (u *UserCRUD) CreateTable(tableName string, attributes string) {
 		return
 	}
 
-	fmt.Printf("Table %v created successfully with attributes!\n", tableName)
+	fmt.Printf("Table %v created successfully!\n", tableName)
 }
