@@ -1,25 +1,52 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+	"log"
 	"strings"
 
 	"github.com/Michael-richard-658/Simple-database/operationdb"
 	"github.com/Michael-richard-658/Simple-database/utils"
+	"github.com/chzyer/readline"
 )
 
+//!!!Move query parser func to operationdb package
+/*
+!! pass query to query parser and to seprate and and
+create table function instead of current
+*/
 func main() {
 	DBCRUD := operationdb.UserCRUD{}
-	utilsFunctions := utils.Utils{}
-	utilsFunctions.Clrscr()
-	run := true
-	for run {
-		reader := bufio.NewReader(os.Stdin)
-		print("mysql> ")
-		query, _ := reader.ReadString('\n')
-		queryParts := utilsFunctions.QueryParts(query)
+	utilFunctions := utils.Utils{}
+	utilFunctions.Clrscr()
+
+	queryLine, err := readline.NewEx(&readline.Config{
+		Prompt:          "jsonDB> ",
+		HistoryFile:     "/tmp/db_history.tmp",
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer queryLine.Close()
+
+	for {
+		query, err := queryLine.Readline()
+		if err != nil {
+			break
+		}
+
+		query = strings.TrimSpace(query)
+		if query == "" {
+			continue
+		}
+		if strings.ToLower(query) == "exit" {
+			fmt.Println("Bye!")
+			break
+		}
+
+		queryParts := utilFunctions.QueryParser(query)
 		actionType := strings.ToUpper(queryParts[0])
 		switch actionType {
 		case "CREATE":
@@ -33,8 +60,10 @@ func main() {
 			fmt.Println("Performing UPDATE operation")
 		case "DELETE":
 			fmt.Println("Performing DELETE operation")
+		case "DESC":
+			DBCRUD.DescTable(queryParts)
 		default:
-			fmt.Println("Invalid Query please check synatx!")
+			fmt.Println("Invalid Query, please check syntax!")
 		}
 	}
 }

@@ -10,14 +10,13 @@ import (
 	"strings"
 )
 
+type Utils struct{}
 type UtilsInterface interface {
 	MapToSQLTable(data interface{}, mode string)
-	MapToJSON(m map[string]any, mode string) string
-	QueryParts(query string) []string
+	//	MapToJSON(m map[string]any, mode string) string
+	QueryParser(query string) []string
 	Clrscr()
 }
-
-type Utils struct{}
 
 func padRight(s string, width int) string {
 	if len(s) >= width {
@@ -83,7 +82,7 @@ func mapsToSQLTable(rows []map[string]interface{}, skipFirst bool) {
 	}
 }
 
-func (u Utils) MapToSQLTable(data interface{}, mode string) {
+func (u Utils) MapToSQLTable(data any, mode string) {
 	switch mode {
 	case "1":
 		if m, ok := data.(map[string]interface{}); ok {
@@ -97,11 +96,31 @@ func (u Utils) MapToSQLTable(data interface{}, mode string) {
 		} else {
 			fmt.Println("Invalid type for mode *: expected []map[string]interface{}")
 		}
+	case "2":
+		if m, ok := data.(map[string]interface{}); ok {
+			keys := make([]string, 0, len(m))
+			for k := range m {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+
+			widths := make(map[string]int, len(keys))
+			for _, k := range keys {
+				widths[k] = len(k)
+			}
+
+			printBorder(keys, widths)
+			h := "|"
+			for _, k := range keys {
+				h += " " + padRight(k, widths[k]) + " |"
+			}
+			fmt.Println(h)
+			printBorder(keys, widths)
+		}
 	default:
-		fmt.Println("Unknown mode. Use \"1\" for single map or \"*\" for slice of maps.")
+		fmt.Println("Unknown mode. Use \"1\" for single map, \"*\" for slice of maps, or \"2\" for schema only.")
 	}
 }
-
 func (u Utils) MapToJSON(m map[string]any, mode string) string {
 	jsonData, err := json.MarshalIndent(m, "", "    ")
 	if err != nil {
@@ -121,9 +140,9 @@ func (u Utils) MapToJSON(m map[string]any, mode string) string {
 	return ""
 }
 
-func (u *Utils) QueryParts(query string) []string {
+func (u *Utils) QueryParser(query string) []string {
 	queryLength := len(query)
-	semiColonIndex := queryLength - 2
+	semiColonIndex := queryLength - 1
 
 	querySemicolonASCIIValue := query[semiColonIndex]
 	if querySemicolonASCIIValue != ';' {
@@ -137,21 +156,20 @@ func (u *Utils) QueryParts(query string) []string {
 		),
 	)
 
-	// "from" should be second to last
-	fromIdx := len(parts) - 2
-
-	fields := parts[1:fromIdx]
-	table := parts[len(parts)-1]
-
-	if len(fields) == 1 && fields[0] == "*" {
-		return parts
-	}
 	if parts[0] == "select" {
+		fromIndex := len(parts) - 2
+		fields := parts[1:fromIndex]
+		table := parts[len(parts)-1]
+		if len(fields) == 1 && fields[0] == "*" {
+			return parts
+		}
 		return []string{fmt.Sprintf("select [%s] from %s", strings.ToLower(strings.Join(fields, " ")), table)}
 	}
-	if parts[0] == "create" {
+	actionType := strings.ToLower(parts[0])
+	if actionType == "create" || actionType == "desc" {
 		return parts
 	}
+
 	return []string{"OUT OF BOUNDS"}
 }
 

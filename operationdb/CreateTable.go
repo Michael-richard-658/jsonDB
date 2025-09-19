@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+// directly pass the queryparts instead of whole query again
+
 func MakeCreateTableQueryArray(query string) (string, []string) {
 	queryParts := strings.Fields(query)
 	if strings.ToLower(queryParts[1]) != "table" {
@@ -32,13 +34,17 @@ func (u *UserCRUD) CreateTable(tableName string, attributes string) {
 	}
 
 	for _, entry := range entries {
-		if entry.Name() == tableName+".json" {
+		if entry.Name() == strings.ToUpper(tableName)+".json" {
 			fmt.Printf("Table with name %v already exists.\n", tableName)
 			return
 		}
 	}
 
 	attributeArr := strings.Fields(attributes)
+	getLastAttribute := attributeArr[len(attributeArr)-1]
+	if getLastAttribute[len(getLastAttribute)-1] == ';' {
+		attributeArr[len(attributeArr)-1] = strings.TrimSuffix(getLastAttribute, ";")
+	}
 	record := make(map[string]string)
 	for _, attr := range attributeArr {
 		record[attr] = ""
