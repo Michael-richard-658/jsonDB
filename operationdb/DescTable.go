@@ -2,6 +2,7 @@ package operationdb
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,13 +11,14 @@ import (
 	"github.com/Michael-richard-658/Simple-database/utils"
 )
 
-func (u *UserCRUD) DescTable(queryParts []string) {
+func (u *DBoperations) DescTable(queryParts []string) {
 	tableNameWithSemicolon := queryParts[1]
 	tableName := strings.TrimSuffix(tableNameWithSemicolon, ";")
 	fullPath := filepath.Join("./tables", strings.ToUpper(tableName)+".json")
 	fileData, err := os.ReadFile(fullPath)
 	if err != nil {
-		log.Fatalf("Failed to read table %s: %v", tableName, err)
+		fmt.Printf(" table %s doesnt exist! \n", tableName)
+		return
 	}
 	var records []map[string]any
 	if err := json.Unmarshal(fileData, &records); err != nil {

@@ -14,7 +14,6 @@ type Utils struct{}
 type UtilsInterface interface {
 	MapToSQLTable(data interface{}, mode string)
 	//	MapToJSON(m map[string]any, mode string) string
-	QueryParser(query string) []string
 	Clrscr()
 }
 
@@ -138,39 +137,6 @@ func (u Utils) MapToJSON(m map[string]any, mode string) string {
 
 	log.Fatalf("invalid mode: %s (use 'print' or 'obj')", mode)
 	return ""
-}
-
-func (u *Utils) QueryParser(query string) []string {
-	queryLength := len(query)
-	semiColonIndex := queryLength - 1
-
-	querySemicolonASCIIValue := query[semiColonIndex]
-	if querySemicolonASCIIValue != ';' {
-		fmt.Println("Expected ';' Found ' ' ")
-		return []string{"; error"}
-	}
-
-	parts := strings.Fields(
-		strings.TrimSpace(
-			strings.TrimSuffix(query, ";"),
-		),
-	)
-
-	if parts[0] == "select" {
-		fromIndex := len(parts) - 2
-		fields := parts[1:fromIndex]
-		table := parts[len(parts)-1]
-		if len(fields) == 1 && fields[0] == "*" {
-			return parts
-		}
-		return []string{fmt.Sprintf("select [%s] from %s", strings.ToLower(strings.Join(fields, " ")), table)}
-	}
-	actionType := strings.ToLower(parts[0])
-	if actionType == "create" || actionType == "desc" {
-		return parts
-	}
-
-	return []string{"OUT OF BOUNDS"}
 }
 
 func (u *Utils) Clrscr() {

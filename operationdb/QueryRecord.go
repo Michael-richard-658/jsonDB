@@ -11,41 +11,12 @@ import (
 	"github.com/Michael-richard-658/Simple-database/utils"
 )
 
-func makeQueryArray(query string) []any {
-	parts := strings.Fields(query)
-
-	if parts[1] == "*" {
-		result := []any{}
-		for _, p := range parts {
-			result = append(result, p)
-		}
-		return result
-	}
-
-	attributes := []string{}
-	i := 1
-	for i < len(parts) && strings.ToUpper(parts[i]) != "FROM" {
-		attributes = append(attributes, parts[i])
-		i++
-	}
-
-	result := []any{}
-	result = append(result, parts[0])
-	result = append(result, attributes)
-	for _, v := range parts[i:] {
-		result = append(result, v)
-	}
-
-	return result
-}
-
-func (u *UserCRUD) QueryRecord(query string) {
-	queryParts := makeQueryArray(query)
+func (u *DBoperations) QueryRecord(queryParts []string) {
 
 	fromIndex := -1
 	for i, part := range queryParts {
-		partsToString, ok := part.(string)
-		if ok && strings.ToUpper(partsToString) == "FROM" && i+1 < len(queryParts) {
+
+		if strings.ToUpper(part) == "FROM" && i+1 < len(queryParts) {
 			fromIndex = i + 1
 			break
 		}
@@ -55,15 +26,13 @@ func (u *UserCRUD) QueryRecord(query string) {
 		log.Fatal("Invalid query: missing FROM")
 	}
 
-	tableNameWithSemicolon, ok := queryParts[fromIndex].(string)
-	if !ok {
-		log.Fatal("Invalid table name")
-	}
+	tableNameWithSemicolon := queryParts[fromIndex]
 	tableName := strings.ToUpper(strings.TrimSuffix(tableNameWithSemicolon, ";"))
 	fullPath := filepath.Join("./tables", fmt.Sprintf("%s.json", tableName))
 
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-		log.Fatalf("Table %s does not exist!", tableName)
+		fmt.Printf("Table %s does not exist! \n", tableName)
+		return
 	}
 
 	fileData, err := os.ReadFile(fullPath)

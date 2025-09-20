@@ -9,23 +9,7 @@ import (
 	"strings"
 )
 
-// directly pass the queryparts instead of whole query again
-
-func MakeCreateTableQueryArray(query string) (string, []string) {
-	queryParts := strings.Fields(query)
-	if strings.ToLower(queryParts[1]) != "table" {
-		log.Fatal(queryParts[1] + " is not a valid command, did you mean TABLE?")
-	}
-	if len(queryParts) < 4 {
-		log.Fatal("Invalid CREATE TABLE query")
-	}
-
-	tableName := queryParts[2]
-	attributes := queryParts[3:]
-	return tableName, attributes
-}
-
-func (u *UserCRUD) CreateTable(tableName string, attributes string) {
+func (u *DBoperations) CreateTable(tableName string, attributes string) {
 	dirPath := "./tables"
 
 	entries, err := os.ReadDir(dirPath)
@@ -59,7 +43,7 @@ func (u *UserCRUD) CreateTable(tableName string, attributes string) {
 
 	createFile, err := os.Create(filePath)
 	if err != nil {
-		log.Fatalf("failed to create file: %s", err)
+		log.Fatalf("failed to create table: %s", err)
 	}
 	defer createFile.Close()
 	_, err = createFile.WriteString("[" + string(jsonData) + "]")

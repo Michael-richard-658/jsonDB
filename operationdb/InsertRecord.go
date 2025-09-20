@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (u *UserCRUD) InsertRecord(tableName string, query string) {
+func (u *DBoperations) InsertRecord(tableName string, query string) {
 	fullPath := filepath.Join("./tables", tableName+".json")
 
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {

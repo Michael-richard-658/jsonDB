@@ -10,13 +10,13 @@ import (
 	"github.com/chzyer/readline"
 )
 
-//!!!Move query parser func to operationdb package
+//!!!Insert query
+//!! select query update on only fields required
 /*
-!! pass query to query parser and to seprate and and
-create table function instead of current
+! remove fatal from killing program return errors instead
 */
 func main() {
-	DBCRUD := operationdb.UserCRUD{}
+	DBOperation := operationdb.DBoperations{}
 	utilFunctions := utils.Utils{}
 	utilFunctions.Clrscr()
 
@@ -46,14 +46,15 @@ func main() {
 			break
 		}
 
-		queryParts := utilFunctions.QueryParser(query)
+		queryParts, attributes := DBOperation.QueryParser(query)
+
 		actionType := strings.ToUpper(queryParts[0])
 		switch actionType {
 		case "CREATE":
-			tableName, fields := operationdb.MakeCreateTableQueryArray(query)
-			DBCRUD.CreateTable(tableName, strings.Join(fields, " "))
+			tableName := queryParts[2]
+			DBOperation.CreateTable(tableName, strings.Join(attributes, " "))
 		case "SELECT":
-			DBCRUD.QueryRecord(query)
+			DBOperation.QueryRecord(queryParts)
 		case "INSERT":
 			fmt.Println("Performing INSERT operation")
 		case "UPDATE":
@@ -61,9 +62,11 @@ func main() {
 		case "DELETE":
 			fmt.Println("Performing DELETE operation")
 		case "DESC":
-			DBCRUD.DescTable(queryParts)
+			DBOperation.DescTable(queryParts)
+		case "DROP":
+			DBOperation.DropTable(queryParts)
 		default:
-			fmt.Println("Invalid Query, please check syntax!")
+			fmt.Println("Invalid Query, please check syntax from main!")
 		}
 	}
 }
