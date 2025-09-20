@@ -14,6 +14,7 @@ import (
 //!! select query update on only fields required
 /*
 ! remove fatal from killing program return errors instead
+! make a separate file for queryparser which comes under DBcompiler package
 */
 func main() {
 	DBOperation := operationdb.DBoperations{}
