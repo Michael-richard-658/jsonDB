@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	compiler "github.com/Michael-richard-658/Simple-database/Compiler"
@@ -26,9 +25,9 @@ func main() {
 
 	//for {
 	Compiler := compiler.CompilerProperties{}
-	query := "select cc,hp,nm from users  where name = 'xpulse';"
+	query := "select cc,hp from users  ;"
 	Tokens := Compiler.Lexer(query)
-	fmt.Println(Tokens)
+	Compiler.Parser(Tokens)
 	/*if err != nil {
 		break
 	}

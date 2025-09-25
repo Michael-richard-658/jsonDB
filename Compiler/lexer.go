@@ -7,11 +7,11 @@ import (
 type TokenType string
 
 const (
-	SELECT TokenType = "SELECT"
-	FROM   TokenType = "FROM"
-	CREATE TokenType = "CREATE"
-	WHERE  TokenType = "WHERE"
-
+	SELECT     TokenType = "SELECT"
+	FROM       TokenType = "FROM"
+	CREATE     TokenType = "CREATE"
+	WHERE      TokenType = "WHERE"
+	EOF        TokenType = "EOF"
 	IDENTIFIER TokenType = "IDENTIFIER"
 	NUMBER     TokenType = "NUMBER"
 	EQUAL      TokenType = "EQUAL"
@@ -29,6 +29,7 @@ var keywords = map[string]TokenType{
 	"FROM":   FROM,
 	"CREATE": CREATE,
 	"WHERE":  WHERE,
+	"EOF":    EOF,
 }
 
 func (cp *CompilerProperties) Lexer(query string) []Token {
