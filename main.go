@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	compiler "github.com/Michael-richard-658/Simple-database/Compiler"
@@ -23,11 +24,23 @@ func main() {
 	}
 	defer queryLine.Close()
 
-	//for {
 	Compiler := compiler.CompilerProperties{}
-	query := "select cc,hp from users  ;"
+	//for {
+	/*query := `create table bikes(
+	model text,
+	hp int,
+	nm int,
+	ABS boolean
+	);`*/
+	query := "select * from bikes;"
 	Tokens := Compiler.Lexer(query)
-	Compiler.Parser(Tokens)
+	fmt.Println(Tokens)
+	AST, err := Compiler.Parser(Tokens)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("AST: %+v\n", AST)
 	/*if err != nil {
 		break
 	}

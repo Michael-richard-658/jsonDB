@@ -2,18 +2,14 @@ package compiler
 
 import "fmt"
 
-type SelectStmt struct {
-	Columns []string
-	Table   string
-	Where   *Condition
-}
-
+// Where STRUCT
 type Condition struct {
 	Left     string
 	Operator string
-	Right    string
+	Right    any
 }
 
+// HELPERS FOR PARSING
 var tokenIndex int
 
 func current(tokens []Token) Token {
@@ -36,15 +32,33 @@ func expect(expected TokenType, tokens []Token) (Token, error) {
 	return Token{}, fmt.Errorf("expected %v, got %v", expected, current(tokens).Type)
 }
 
-func (cp *CompilerProperties) Parser(tokens []Token) {
+func (cp *CompilerProperties) Parser(tokens []Token) (interface{}, error) {
 
-	stmt, err := parseSelectStmt(tokens)
+	stmt, err := parseStatement(tokens)
 	if err != nil {
-		fmt.Println("Parser error:", err)
-		return
+		return nil, err
 	}
 
-	fmt.Printf("Parsed AST: %+v\n", stmt)
+	return stmt, nil
+}
+func parseStatement(tokens []Token) (interface{}, error) {
+	switch current(tokens).Type {
+	case SELECT:
+		return parseSelectStmt(tokens)
+	case CREATE:
+		return nil, nil
+	case DESC:
+		return parseDescStmt(tokens)
+	default:
+		return nil, fmt.Errorf("unexpected token %v", current(tokens))
+	}
+}
+
+// SELECT PARSING
+type SelectStmt struct {
+	Columns []string
+	Table   string
+	Where   *Condition
 }
 
 func parseSelectStmt(tokens []Token) (*SelectStmt, error) {
@@ -129,5 +143,16 @@ func parseCondition(tokens []Token) (*Condition, error) {
 		Left:     left.Value,
 		Operator: op.Value,
 		Right:    right.Value,
+	}, nil
+}
+
+// DESC PARSING
+type DescStmt struct {
+	Table Token
+}
+
+func parseDescStmt(tokens []Token) (*DescStmt, error) {
+	return &DescStmt{
+		Table: tokens[1],
 	}, nil
 }
