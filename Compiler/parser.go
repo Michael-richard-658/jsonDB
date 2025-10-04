@@ -46,12 +46,59 @@ func parseStatement(tokens []Token) (interface{}, error) {
 	case SELECT:
 		return parseSelectStmt(tokens)
 	case CREATE:
-		return nil, nil
+		return parseCreateStmt(tokens)
 	case DESC:
 		return parseDescStmt(tokens)
 	default:
 		return nil, fmt.Errorf("unexpected token %v", current(tokens))
 	}
+}
+
+// CREATE
+type ColumnDef struct {
+	Name string
+	Type string
+}
+
+type CreateTableStmt struct {
+	TableName string
+	Columns   []ColumnDef
+}
+
+func parseCreateStmt(tokens []Token) (interface{}, error) {
+	if len(tokens) < 5 {
+		return nil, fmt.Errorf("invalid CREATE TABLE statement")
+	}
+
+	stmt := &CreateTableStmt{}
+	// token[0] = CREATE, token[1] = table, token[2] = <table_name>
+	stmt.TableName = tokens[2].Value
+
+	var columns []ColumnDef
+	i := 4 // start after '('
+
+	for i < len(tokens) {
+		// stop if closing parenthesis or semicolon
+		if tokens[i].Type == SEMICOLON || tokens[i].Value == ")" {
+			break
+		}
+
+		// expect IDENTIFIER + DATATYPE pair
+		if tokens[i].Type == IDENTIFIER && (i+1 < len(tokens)) {
+			colName := tokens[i].Value
+			colType := tokens[i+1].Value
+			columns = append(columns, ColumnDef{Name: colName, Type: colType})
+			i += 2
+		}
+
+		// skip comma if exists
+		if i < len(tokens) && tokens[i].Type == COMMA {
+			i++
+		}
+	}
+
+	stmt.Columns = columns
+	return stmt, nil
 }
 
 // SELECT PARSING

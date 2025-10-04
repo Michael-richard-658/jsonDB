@@ -26,15 +26,13 @@ func main() {
 
 	Compiler := compiler.CompilerProperties{}
 	//for {
-	/*query := `create table bikes(
+	query := `create table bikes(
 	model text,
 	hp int,
 	nm int,
 	ABS boolean
-	);`*/
-	query := "select * from bikes;"
+	);`
 	Tokens := Compiler.Lexer(query)
-	fmt.Println(Tokens)
 	AST, err := Compiler.Parser(Tokens)
 	if err != nil {
 		fmt.Println(err)
