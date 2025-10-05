@@ -20,7 +20,7 @@ const (
 	COMMA       TokenType = "COMMA"
 	SEMICOLON   TokenType = "SEMICOLON"
 	INT         TokenType = "INT"
-	TEXT        TokenType = "TEXT"
+	VARCHAR     TokenType = "VARCHAR"
 	BOOLEAN     TokenType = "BOOLEAN"
 )
 
@@ -37,78 +37,75 @@ var keywords = map[string]TokenType{
 	"WHERE":  WHERE,
 	"EOF":    EOF,
 }
+
 var dataTypes = map[string]TokenType{
 	"INT":     INT,
-	"TEXT":    TEXT,
+	"VARCHAR": VARCHAR,
 	"BOOLEAN": BOOLEAN,
 }
 
+// Lexer converts a SQL string into tokens
 func (cp *CompilerProperties) Lexer(query string) []Token {
 	var tokens []Token
 	currentToken := ""
 
+	isNumber := func(s string) bool {
+		for _, ch := range s {
+			if ch < '0' || ch > '9' {
+				return false
+			}
+		}
+		return true
+	}
+
+	flush := func() {
+		if currentToken != "" {
+			tok := classifyWord(currentToken, isNumber)
+			tokens = append(tokens, tok)
+			currentToken = ""
+		}
+	}
+
 	for i := 0; i < len(query); i++ {
 		ch := query[i]
-
-		if ch == ' ' || ch == ',' || ch == ';' || ch == '=' || ch == '(' || ch == ')' {
-			if currentToken != "" {
-				tokens = append(tokens, classifyWord(currentToken))
-				currentToken = ""
-			}
-			if ch == ',' {
+		switch ch {
+		case ' ', '\t', '\n', '\r':
+			flush()
+		case ',', ';', '=', '(', ')':
+			flush()
+			switch ch {
+			case ',':
 				tokens = append(tokens, Token{Type: COMMA, Value: ","})
-			}
-			if ch == ';' {
+			case ';':
 				tokens = append(tokens, Token{Type: SEMICOLON, Value: ";"})
-			}
-			if ch == '=' {
+			case '=':
 				tokens = append(tokens, Token{Type: EQUAL, Value: "="})
-			}
-			if ch == '(' {
+			case '(':
 				tokens = append(tokens, Token{Type: PARENTHESIS, Value: "("})
-			}
-			if ch == ')' {
+			case ')':
 				tokens = append(tokens, Token{Type: PARENTHESIS, Value: ")"})
 			}
-			continue
-		}
-
-		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
-			(ch >= '0' && ch <= '9') || ch == '*' {
+		default:
 			currentToken += string(ch)
 		}
 	}
 
-	if currentToken != "" {
-		tokens = append(tokens, classifyWord(currentToken))
-	}
-
+	flush() // flush any remaining token
 	return tokens
 }
 
-func classifyWord(word string) Token {
+// classifyWord determines the token type for a word
+func classifyWord(word string, isNumber func(string) bool) Token {
 	upperWord := strings.ToUpper(word)
 
 	if isNumber(word) {
 		return Token{Type: NUMBER, Value: word}
 	}
-
 	if tok, ok := keywords[upperWord]; ok {
 		return Token{Type: tok, Value: word}
 	}
-
 	if tok, ok := dataTypes[upperWord]; ok {
 		return Token{Type: tok, Value: word}
 	}
-
 	return Token{Type: IDENTIFIER, Value: word}
-}
-
-func isNumber(s string) bool {
-	for _, ch := range s {
-		if ch < '0' || ch > '9' {
-			return false
-		}
-	}
-	return true
 }

@@ -30,7 +30,7 @@ func main() {
 	//for {
 
 	queries := []string{`create table bikes(
-	model text,
+	model varchar(20),
 	hp int,
 	nm int,
 	ABS boolean

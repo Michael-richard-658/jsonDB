@@ -59,8 +59,9 @@ func (cp *CompilerProperties) Parser(tokens []Token) (AST, error) {
 // === CREATE TABLE PARSER ===
 
 type ColumnDef struct {
-	Name string
-	Type string
+	Name   string
+	Type   string
+	Length int
 }
 
 type CreateTableStmt struct {
@@ -94,18 +95,41 @@ func parseCreateStmt(tokens []Token) (*CreateTableStmt, error) {
 		}
 
 		if expectColumn {
-
 			if token.Type != IDENTIFIER {
 				return nil, fmt.Errorf("expected column name, got '%s'", token.Value)
 			}
+			colName := token.Value
+			i++
 
-			if i+1 >= len(tokens) ||
-				(tokens[i+1].Type != INT && tokens[i+1].Type != TEXT && tokens[i+1].Type != BOOLEAN) {
-				return nil, fmt.Errorf("missing or invalid data type for column '%s'", token.Value)
+			if i >= len(tokens) {
+				return nil, fmt.Errorf("expected data type for column '%s'", colName)
 			}
-			columns = append(columns, ColumnDef{Name: token.Value, Type: tokens[i+1].Value})
-			i += 2
+
+			colType := strings.ToUpper(tokens[i].Value)
+			colLength := 0
+
+			// Handle VARCHAR(n)
+			if colType == "VARCHAR" {
+				if i+3 >= len(tokens) ||
+					tokens[i+1].Value != "(" ||
+					tokens[i+2].Type != NUMBER ||
+					tokens[i+3].Value != ")" {
+					return nil, fmt.Errorf("invalid VARCHAR declaration for column '%s'. Correct format: VARCHAR(n)", colName)
+				}
+				colLength = atoi(tokens[i+2].Value)
+				i += 3 // skip '(', number, ')'
+			} else if colType != "INT" && colType != "BOOLEAN" {
+				return nil, fmt.Errorf("invalid data type '%s' for column '%s'", colType, colName)
+			}
+
+			columns = append(columns, ColumnDef{
+				Name:   colName,
+				Type:   colType,
+				Length: colLength,
+			})
+
 			expectColumn = false
+			i++
 		} else {
 			if token.Type != COMMA {
 				return nil, fmt.Errorf("expected ',' between columns, got '%s'", token.Value)
@@ -118,17 +142,21 @@ func parseCreateStmt(tokens []Token) (*CreateTableStmt, error) {
 	if expectColumn && len(columns) > 0 {
 		return nil, fmt.Errorf("dangling comma at end of column list")
 	}
-
 	if i >= len(tokens) || tokens[i].Value != ")" {
 		return nil, fmt.Errorf("missing closing parenthesis")
 	}
-
 	if tokens[len(tokens)-1].Type != SEMICOLON {
-		return nil, fmt.Errorf("missing semicolon ';' at end of statement")
+		return nil, fmt.Errorf("missing ';' at end of statement")
 	}
 
 	stmt.Columns = columns
 	return stmt, nil
+}
+
+func atoi(s string) int {
+	var n int
+	fmt.Sscanf(s, "%d", &n)
+	return n
 }
 
 // === SELECT PARSER ===
