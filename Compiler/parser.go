@@ -1,15 +1,12 @@
 package compiler
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-// Where STRUCT
-type Condition struct {
-	Left     string
-	Operator string
-	Right    any
-}
+// === TOKEN HANDLING HELPERS ===
 
-// HELPERS FOR PARSING
 var tokenIndex int
 
 func current(tokens []Token) Token {
@@ -32,29 +29,35 @@ func expect(expected TokenType, tokens []Token) (Token, error) {
 	return Token{}, fmt.Errorf("expected %v, got %v", expected, current(tokens).Type)
 }
 
-func (cp *CompilerProperties) Parser(tokens []Token) (interface{}, error) {
+// === AST STRUCTURES ===
 
-	stmt, err := parseStatement(tokens)
-	if err != nil {
-		return nil, err
-	}
-
-	return stmt, nil
+type AST struct {
+	ASTNode       interface{}
+	StatementType string
 }
-func parseStatement(tokens []Token) (interface{}, error) {
-	switch current(tokens).Type {
+
+// === MAIN PARSER ===
+
+func (cp *CompilerProperties) Parser(tokens []Token) (AST, error) {
+	tokenIndex = 0
+
+	switch tokens[0].Type {
 	case SELECT:
-		return parseSelectStmt(tokens)
+		stmt, err := parseSelectStmt(tokens)
+		return AST{ASTNode: stmt, StatementType: "SELECT"}, err
 	case CREATE:
-		return parseCreateStmt(tokens)
+		stmt, err := parseCreateStmt(tokens)
+		return AST{ASTNode: stmt, StatementType: "CREATE"}, err
 	case DESC:
-		return parseDescStmt(tokens)
+		stmt, err := parseDescStmt(tokens)
+		return AST{ASTNode: stmt, StatementType: "DESC"}, err
 	default:
-		return nil, fmt.Errorf("unexpected token %v", current(tokens))
+		return AST{}, fmt.Errorf("unexpected start of statement: %v", tokens[0].Value)
 	}
 }
 
-// CREATE
+// === CREATE TABLE PARSER ===
+
 type ColumnDef struct {
 	Name string
 	Type string
@@ -65,43 +68,77 @@ type CreateTableStmt struct {
 	Columns   []ColumnDef
 }
 
-func parseCreateStmt(tokens []Token) (interface{}, error) {
-	if len(tokens) < 5 {
+func parseCreateStmt(tokens []Token) (*CreateTableStmt, error) {
+	if len(tokens) < 8 {
 		return nil, fmt.Errorf("invalid CREATE TABLE statement")
 	}
 
-	stmt := &CreateTableStmt{}
-	// token[0] = CREATE, token[1] = table, token[2] = <table_name>
-	stmt.TableName = tokens[2].Value
+	if strings.ToUpper(tokens[1].Value) != "TABLE" {
+		return nil, fmt.Errorf("expected 'TABLE' after CREATE, got %s", tokens[1].Value)
+	}
 
+	if tokens[3].Value != "(" {
+		return nil, fmt.Errorf("expected '(' after table name")
+	}
+
+	stmt := &CreateTableStmt{TableName: tokens[2].Value}
 	var columns []ColumnDef
-	i := 4 // start after '('
+	i := 4
+	expectColumn := true
 
 	for i < len(tokens) {
-		// stop if closing parenthesis or semicolon
-		if tokens[i].Type == SEMICOLON || tokens[i].Value == ")" {
+		token := tokens[i]
+
+		if token.Value == ")" || token.Type == SEMICOLON {
 			break
 		}
 
-		// expect IDENTIFIER + DATATYPE pair
-		if tokens[i].Type == IDENTIFIER && (i+1 < len(tokens)) {
-			colName := tokens[i].Value
-			colType := tokens[i+1].Value
-			columns = append(columns, ColumnDef{Name: colName, Type: colType})
-			i += 2
-		}
+		if expectColumn {
 
-		// skip comma if exists
-		if i < len(tokens) && tokens[i].Type == COMMA {
+			if token.Type != IDENTIFIER {
+				return nil, fmt.Errorf("expected column name, got '%s'", token.Value)
+			}
+
+			if i+1 >= len(tokens) ||
+				(tokens[i+1].Type != INT && tokens[i+1].Type != TEXT && tokens[i+1].Type != BOOLEAN) {
+				return nil, fmt.Errorf("missing or invalid data type for column '%s'", token.Value)
+			}
+			columns = append(columns, ColumnDef{Name: token.Value, Type: tokens[i+1].Value})
+			i += 2
+			expectColumn = false
+		} else {
+			if token.Type != COMMA {
+				return nil, fmt.Errorf("expected ',' between columns, got '%s'", token.Value)
+			}
+			expectColumn = true
 			i++
 		}
+	}
+
+	if expectColumn && len(columns) > 0 {
+		return nil, fmt.Errorf("dangling comma at end of column list")
+	}
+
+	if i >= len(tokens) || tokens[i].Value != ")" {
+		return nil, fmt.Errorf("missing closing parenthesis")
+	}
+
+	if tokens[len(tokens)-1].Type != SEMICOLON {
+		return nil, fmt.Errorf("missing semicolon ';' at end of statement")
 	}
 
 	stmt.Columns = columns
 	return stmt, nil
 }
 
-// SELECT PARSING
+// === SELECT PARSER ===
+
+type Condition struct {
+	Left     string
+	Operator string
+	Right    any
+}
+
 type SelectStmt struct {
 	Columns []string
 	Table   string
@@ -109,6 +146,7 @@ type SelectStmt struct {
 }
 
 func parseSelectStmt(tokens []Token) (*SelectStmt, error) {
+	tokenIndex = 0
 	_, err := expect(SELECT, tokens)
 	if err != nil {
 		return nil, err
@@ -193,13 +231,15 @@ func parseCondition(tokens []Token) (*Condition, error) {
 	}, nil
 }
 
-// DESC PARSING
+// === DESC PARSER ===
+
 type DescStmt struct {
-	Table Token
+	TableName string
 }
 
 func parseDescStmt(tokens []Token) (*DescStmt, error) {
-	return &DescStmt{
-		Table: tokens[1],
-	}, nil
+	if len(tokens) < 2 {
+		return nil, fmt.Errorf("incomplete DESC statement")
+	}
+	return &DescStmt{TableName: tokens[1].Value}, nil
 }

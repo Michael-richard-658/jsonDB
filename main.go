@@ -5,6 +5,7 @@ import (
 	"log"
 
 	compiler "github.com/Michael-richard-658/Simple-database/Compiler"
+	engine "github.com/Michael-richard-658/Simple-database/Engine"
 	"github.com/Michael-richard-658/Simple-database/utils"
 	"github.com/chzyer/readline"
 )
@@ -25,21 +26,25 @@ func main() {
 	defer queryLine.Close()
 
 	Compiler := compiler.CompilerProperties{}
+	Engine := engine.EngineProperties{}
 	//for {
-	query := `create table bikes(
+
+	queries := []string{`create table bikes(
 	model text,
 	hp int,
 	nm int,
 	ABS boolean
-	);`
-	Tokens := Compiler.Lexer(query)
+	);`,
+		"select * from bikes;"}
+	Tokens := Compiler.Lexer(queries[0])
 	AST, err := Compiler.Parser(Tokens)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Printf("AST: %+v\n", AST)
-	/*if err != nil {
+	queryPlan := Engine.QueryPlanner(AST)
+	Engine.QueryExecutor(queryPlan)
+	/*if err != nil {}
 		break
 	}
 
